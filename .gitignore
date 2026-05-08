@@ -1,0 +1,17 @@
+node_modules/
+dist/
+build/
+*.log
+.DS_Store
+
+# Env files — never commit. Each skill documents required vars in its README.
+.env*
+
+# Wallet material — local only.
+wallet.json
+keystore*
+
+# Editor / IDE state
+.vscode/
+.idea/
+*.swp

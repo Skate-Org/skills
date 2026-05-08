@@ -1,0 +1,22 @@
+{
+  "name": "skate-skillpay-scripts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Client dependencies for skate-skillpay/scripts/src/client.ts",
+  "scripts": {
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@monad-crypto/mpp": "0.0.3",
+    "mppx": "0.5.12",
+    "viem": "2.47.18"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@types/node": "25.6.0",
+    "typescript": "5.9.3"
+  }
+}
