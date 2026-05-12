@@ -1,5 +1,5 @@
 export const TIME_TO_FIRST_BYTE_MS = 30_000;
-export const USER_AGENT = "skate-skillpay/0.1.0";
+export const USER_AGENT = "skate-skillpay/0.1.1";
 export const BACKEND_URL = "https://api2.skatechain.org/skate-skillpay";
 
 export const ALLOWED_METHODS = new Set([

@@ -1,6 +1,6 @@
 {
   "name": "skate-skillpay-scripts",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "description": "Client dependencies for skate-skillpay/scripts/src/client.ts",

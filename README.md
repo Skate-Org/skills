@@ -4,9 +4,10 @@ AI agent skills published and maintained by Skate. Each top-level folder is one 
 
 ## Skills in this repo
 
-| Skill                                 | What it does                                                                                                                                                 |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [`skate-skillpay`](./skate-skillpay/) | Pay per request for third-party APIs in stablecoins over [MPP](https://mpp.dev/overview) via Monad — no subscription, no API keys in the user's environment. |
+| Skill                                 | What it does                                                                                                                                                                      |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`skate-skillpay`](./skate-skillpay/) | Pay per request for third-party APIs in stablecoins over [MPP](https://mpp.dev/overview) via Monad — no subscription, no API keys in the user's environment.                      |
+| [`alphavantage`](./alphavantage/)     | Alpha Vantage market-data REST API (stocks, options, fundamentals, FX, crypto, commodities, indicators). Reads `ALPHAVANTAGE_API_KEY`; falls back to `skate-skillpay` when unset. |
 
 More skills will land here over time. Each one lives under its own folder and ships with a per-skill README that is the authoritative doc — this top-level file only lists what exists and points at it.
 
@@ -28,13 +29,20 @@ Any client-side dependencies each skill needs are installed from within the skil
 skills/
 ├── README.md                 # this file — index of what's here
 ├── .gitignore
-└── skate-skillpay/           # one skill per top-level folder
-    ├── SKILL.md              # agent-facing instructions
-    ├── README.md             # human-facing overview (authoritative)
+├── skate-skillpay/           # one skill per top-level folder
+│   ├── SKILL.md              # agent-facing instructions
+│   ├── README.md             # human-facing overview (authoritative)
+│   ├── LICENSE
+│   ├── references/           # loaded by the agent on demand
+│   └── scripts/              # client-side code the agent executes (when a skill needs it)
+└── alphavantage/
+    ├── SKILL.md
+    ├── README.md
     ├── LICENSE
-    ├── references/           # loaded by the agent on demand
-    └── scripts/              # any client-side code the agent executes
+    └── references/
 ```
+
+`scripts/` is optional — some skills (like `alphavantage`) are pure REST and the agent just `curl`s the upstream, so there's nothing to compile or install.
 
 ## License
 

@@ -63,7 +63,7 @@ export function parseArgs(argv: string[]): Args {
 }
 
 export function validateArgs(args: Args) {
-  if (!args.service || !/^[a-z0-9][a-z0-9-]{0,31}$/.test(args.service)) {
+  if (!args.service || !/^[a-z0-9][a-z0-9_-]{0,31}$/.test(args.service)) {
     return die(ExitCode.Usage, "invalid --service");
   }
 
