@@ -96,20 +96,22 @@ skate-skillpay/
 │           ├── args.ts       parseArgs + validateArgs
 │           ├── wallet.ts     loadWallets + fetchServices + pickWalletEntry + checkWallet
 │           ├── mppx.ts       lazy mppx/client + viem; per-network dispatch (Monad today)
-│           └── response.ts   request building + stream piping + challenge parsing
+│           ├── response.ts   request building + stream piping + challenge parsing
+│           └── redact.ts     credential scrubber for upstream responses + die() error bodies
 └── references/
     └── wallet-setup.md       loaded only when --check-wallet fails
 ```
 
 ### Contract between the agent and `client.ts`
 
-| Concern                  | Where                                                              |
-| ------------------------ | ------------------------------------------------------------------ |
-| When to invoke the skill | `SKILL.md`                                                         |
-| CLI flags and exit codes | `SKILL.md` (usage table) + `utils/constants.ts` (ExitCode enum)    |
-| Wallet path / schema     | `utils/wallet.ts` + `references/wallet-setup.md`                   |
-| Payment cap enforcement  | `client.ts` `onChallenge` hook; rejects quotes above `--max-price` |
-| Streaming passthrough    | `utils/response.ts#writeResponse`                                  |
+| Concern                  | Where                                                                     |
+| ------------------------ | ------------------------------------------------------------------------- |
+| When to invoke the skill | `SKILL.md`                                                                |
+| CLI flags and exit codes | `SKILL.md` (usage table) + `utils/constants.ts` (ExitCode enum)           |
+| Wallet path / schema     | `utils/wallet.ts` + `references/wallet-setup.md`                          |
+| Payment cap enforcement  | `client.ts` `onChallenge` hook; rejects quotes above `--max-price`        |
+| Streaming passthrough    | `utils/response.ts#writeResponse`                                         |
+| Credential scrubbing     | `utils/redact.ts`; applied to every stdout response and stderr error body |
 
 ---
 

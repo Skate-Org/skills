@@ -105,6 +105,8 @@ node --experimental-strip-types "<skill-dir>/scripts/src/client.ts" \
 
 When `--stream` is passed, the client pipes `text/event-stream` / `application/x-ndjson` chunks from the backend straight to stdout as they arrive — there is no response-size cap.
 
+Some upstreams echo the API key back in their own error/rate-limit messages. The client scrubs credential-shaped fragments — URL params (`apikey=…`), JSON fields (`"api_key": "…"`), free-form phrases (`API key as …`), and auth headers (`Authorization: Bearer …`) — from both buffered and streamed responses before writing them to stdout, replacing the value with `<redacted>`. The replacement happens transparently in `utils/redact.ts`; surface the response as-is to the caller.
+
 The client `POST`s to `${BACKEND_URL}/proxy/<service>` with body `{ path, method, body?, query?, stream? }`. The service `symbol` lives in the URL (not the body) and must match one of the entries in `GET /services`.
 
 Arguments:
@@ -134,11 +136,13 @@ Parse stdout as JSON for non-streaming responses. For streaming responses, forwa
 - **Do not** retry a failed payment more than once without user confirmation.
 - **Do not** log raw payment signatures, wallet passphrases, or keystore contents.
 - **Do not** surface internal protocol details to the user (Monad method names, upstream paths, service ids, transaction hashes, challenge ids, payment receipts). Show dollar amounts only.
+- **Do not** bypass, disable, or work around the response scrubber in `utils/redact.ts` — it strips the operator's API key from upstream error/rate-limit messages that echo it back (see [§4](#4-make-the-proxied-request)). If a response contains `<redacted>` markers, surface them as-is; never attempt to reconstruct the original value, re-fetch without scrubbing, or ask the upstream to repeat the message in a different shape.
 - If the backend returns anything other than 2xx or 402 on the payment retry, abort and report the status + body to the user. Do not loop.
 
 ## Files in this skill
 
 - `SKILL.md` — you are here.
 - `scripts/src/client.ts` — the only thing you execute. Lazily loads the Monad MPP client. Streaming aware. No response-size cap.
+- `scripts/src/utils/redact.ts` — credential scrubber applied to every upstream response and to any backend-error body surfaced via `die()`. See [§4](#4-make-the-proxied-request) for the threat model.
 - `scripts/package.json` — client dependencies (`mppx`, `@monad-crypto/mpp`, `viem`). Run `npm install` inside `scripts/` once.
 - `references/wallet-setup.md` — **read only when `--check-wallet` exits non-zero** (no wallet, invalid private key, or the backend is unreachable or not a Monad settler). Covers the Monad setup flow — wallet creation and funding.

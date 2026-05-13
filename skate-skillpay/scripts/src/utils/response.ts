@@ -3,6 +3,7 @@ import { pipeline } from "node:stream/promises";
 import type { ReadableStream as NodeReadableStream } from "node:stream/web";
 
 import { USER_AGENT } from "./constants.ts";
+import { createRedactStream, redactText } from "./redact.ts";
 import type { Args } from "../types.ts";
 
 export function buildRequestInit(args: Args): RequestInit {
@@ -38,9 +39,16 @@ export async function writeResponse(res: Response) {
   if (isStreamingResponse(res) && res.body) {
     const body = res.body as unknown as NodeReadableStream<Uint8Array>;
 
-    await pipeline(Readable.fromWeb(body), process.stdout, { end: false });
+    await pipeline(
+      Readable.fromWeb(body),
+      createRedactStream(),
+      process.stdout,
+      {
+        end: false,
+      },
+    );
   } else {
-    process.stdout.write(await res.text());
+    process.stdout.write(redactText(await res.text()));
   }
 }
 
