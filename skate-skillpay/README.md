@@ -92,11 +92,11 @@ skate-skillpay/
 │       ├── client.ts         entry — the only thing the agent executes
 │       ├── types.ts          Args, PAYMENT_METHODS, PaymentMethod, NetworkEntry, WalletFile, ServiceEntry, ServicesInfo
 │       └── utils/
-│           ├── constants.ts  BACKEND_URL, timeouts, exit codes, die()
+│           ├── constants.ts  BACKEND_URL, timeouts, retry cap, exit codes, die()
 │           ├── args.ts       parseArgs + validateArgs
 │           ├── wallet.ts     loadWallets + fetchServices + pickWalletEntry + checkWallet
 │           ├── mppx.ts       lazy mppx/client + viem; per-network dispatch (Monad today)
-│           ├── response.ts   request building + stream piping + challenge parsing
+│           ├── response.ts   request building + stream piping + challenge/402 parsing
 │           └── redact.ts     credential scrubber for upstream responses + die() error bodies
 └── references/
     └── wallet-setup.md       loaded only when --check-wallet fails
@@ -107,7 +107,8 @@ skate-skillpay/
 | Concern                  | Where                                                                     |
 | ------------------------ | ------------------------------------------------------------------------- |
 | When to invoke the skill | `SKILL.md`                                                                |
-| CLI flags and exit codes | `SKILL.md` (usage table) + `utils/constants.ts` (ExitCode enum)           |
+| CLI flags                | `SKILL.md` (arguments table)                                              |
+| Exit codes               | `references/wallet-setup.md` table + `utils/constants.ts` (ExitCode enum) |
 | Wallet path / schema     | `utils/wallet.ts` + `references/wallet-setup.md`                          |
 | Payment cap enforcement  | `client.ts` `onChallenge` hook; rejects quotes above `--max-price`        |
 | Streaming passthrough    | `utils/response.ts#writeResponse`                                         |

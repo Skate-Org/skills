@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 import { BACKEND_URL, die, ExitCode } from "./constants.ts";
 import { loadMppxCore } from "./mppx.ts";
+import { registerSecret } from "./redact.ts";
 import { PAYMENT_METHODS } from "../types.ts";
 import type {
   WalletFile,
@@ -78,6 +79,7 @@ export function loadWallets(): WalletFile | undefined {
       continue;
     }
 
+    registerSecret(e.privateKey);
     out[method] = { address: e.address, privateKey: e.privateKey };
   }
 

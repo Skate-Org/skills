@@ -63,3 +63,38 @@ export function extractChallengeAmount(challenge: any): number {
 
   return Number(raw) / 10 ** decimals;
 }
+
+export async function describe402(response: Response): Promise<string> {
+  const raw = await response.text().catch(() => "");
+  if (!raw) {
+    return "payment required (no response body)";
+  }
+
+  try {
+    const problem = JSON.parse(raw) as Record<string, unknown>;
+    const parts: string[] = [];
+
+    if (typeof problem.type === "string") {
+      const code = problem.type.split("/").filter(Boolean).pop();
+      if (code) {
+        parts.push(`[${code}]`);
+      }
+    }
+
+    if (typeof problem.title === "string") {
+      parts.push(problem.title);
+    }
+
+    if (typeof problem.detail === "string") {
+      parts.push(problem.detail);
+    }
+
+    if (parts.length > 0) {
+      return redactText(parts.join(" "));
+    }
+  } catch {
+    //
+  }
+
+  return redactText(raw.slice(0, 200));
+}

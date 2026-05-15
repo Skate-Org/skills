@@ -123,7 +123,7 @@ Arguments:
 
 Each service has a minimum per-request price. Read `minPriceUsd` from the `--list-services` catalog (step 3) and set `--max-price` at or above it.
 
-The client prints the upstream response to stdout. To stderr it prints **only the dollar amount being charged**, formatted as `[skate] paying $<amount>`. Surface that amount to the user — and nothing else from stderr — so they see costs accruing without having to parse internal service/path/protocol details.
+The client prints the upstream response to stdout. To stderr it prints the dollar amount being charged, formatted as `[skate] paying $<amount>`, and — if the backend rejects a payment and the client re-pays — a `[skate] payment rejected (<reason>); retrying with a fresh challenge (attempt <n>/<max>)` line. Surface the dollar amounts to the user (and, if a retry line appears, that a retry happened) — and nothing else from stderr — so they see costs accruing without having to parse internal service/path/protocol details.
 
 ### 5. Pass the response back to the calling skill
 
@@ -133,7 +133,7 @@ Parse stdout as JSON for non-streaming responses. For streaming responses, forwa
 
 - **Never** forward user-provided headers (especially `Authorization`) to the backend — the upstream API key lives only in the backend.
 - **Always** pass `--max-price` and pick a value appropriate to the task. When confirming with the user, quote the **actual price** the backend will charge (from `GET /services` or the 402 challenge), NEVER the `--max-price` cap. The cap is a refusal threshold; the price is what the user pays. Conflating them tells the user they're being charged 2-5× more than they actually are.
-- **Do not** retry a failed payment more than once without user confirmation.
+- The client automatically re-pays a **rejected-but-uncharged** 402 — the backend returns a fresh challenge and sends no `payment-receipt` (a verification race seen under load) — up to `MAX_PAYMENT_ATTEMPTS` total attempts. It does **not** re-pay a charge that actually settled, nor a challenge the client itself refused (e.g. over `--max-price`). To change the cap, edit `MAX_PAYMENT_ATTEMPTS` in `scripts/src/utils/constants.ts`.
 - **Do not** log raw payment signatures, wallet passphrases, or keystore contents.
 - **Do not** surface internal protocol details to the user (Monad method names, upstream paths, service ids, transaction hashes, challenge ids, payment receipts). Show dollar amounts only.
 - **Do not** bypass, disable, or work around the response scrubber in `utils/redact.ts` — it strips the operator's API key from upstream error/rate-limit messages that echo it back (see [§4](#4-make-the-proxied-request)). If a response contains `<redacted>` markers, surface them as-is; never attempt to reconstruct the original value, re-fetch without scrubbing, or ask the upstream to repeat the message in a different shape.

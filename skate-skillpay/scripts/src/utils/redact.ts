@@ -1,6 +1,13 @@
 import { Transform } from "node:stream";
 
 const REDACTED = "<redacted>";
+const exactSecrets = new Set<string>();
+
+export function registerSecret(value: string | undefined | null): void {
+  if (typeof value === "string" && value.length >= 16) {
+    exactSecrets.add(value);
+  }
+}
 
 const KW =
   "api[_-]?key|api[Kk]ey|access[_-]?token|auth[_-]?token|refresh[_-]?token|id[_-]?token|client[_-]?secret|webhook[_-]?secret|private[_-]?key|signing[_-]?secret|token|secret|password|passwd|pwd|passphrase|credential";
@@ -58,6 +65,12 @@ const RE_AUTH_COOKIE_NAME =
 
 export function redactText(input: string): string {
   let out = input;
+
+  for (const secret of exactSecrets) {
+    if (out.includes(secret)) {
+      out = out.split(secret).join(REDACTED);
+    }
+  }
 
   out = out.replace(RE_AWS, REDACTED);
   out = out.replace(RE_JWT, REDACTED);

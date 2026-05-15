@@ -6,10 +6,12 @@ import {
   die,
   ExitCode,
   BACKEND_URL,
+  MAX_PAYMENT_ATTEMPTS,
   TIME_TO_FIRST_BYTE_MS,
 } from "./utils/constants.ts";
 import { loadMppxCore, loadPaymentMethod } from "./utils/mppx.ts";
 import {
+  describe402,
   writeResponse,
   buildRequestInit,
   extractChallengeAmount,
@@ -61,33 +63,74 @@ async function run(args: Args) {
     },
   });
 
-  const ctrl = new AbortController();
-  const url = `${BACKEND_URL}/proxy/${encodeURIComponent(args.service!)}`;
-  const timeout = setTimeout(() => ctrl.abort(), TIME_TO_FIRST_BYTE_MS);
-
+  let attempt = 0;
   let response: Response;
+  const url = `${BACKEND_URL}/proxy/${encodeURIComponent(args.service!)}`;
 
-  try {
-    response = await mppx.fetch(url, {
-      signal: ctrl.signal,
-      ...buildRequestInit(args),
-    });
-  } catch (e) {
-    const err = e as Error;
-    const networky = err.name === "AbortError" || err.name === "TimeoutError";
+  while (true) {
+    attempt++;
+    refusalReason = undefined;
 
-    die(
-      networky ? ExitCode.Network : ExitCode.PaymentFailed,
-      `${networky ? "network" : "payment"} error: ${err.message}`,
+    const ctrl = new AbortController();
+    const timeout = setTimeout(() => ctrl.abort(), TIME_TO_FIRST_BYTE_MS);
+
+    try {
+      response = await mppx.fetch(url, {
+        signal: ctrl.signal,
+        ...buildRequestInit(args),
+      });
+    } catch (e) {
+      const err = e as Error;
+
+      const networky =
+        err.name === "AbortError" ||
+        err.name === "TimeoutError" ||
+        (err.name === "TypeError" && err.message === "fetch failed");
+
+      const detail =
+        err.cause instanceof Error
+          ? `${err.message} (${err.cause.message})`
+          : err.message;
+
+      die(
+        networky ? ExitCode.Network : ExitCode.PaymentFailed,
+        `${networky ? "network" : "payment"} error: ${detail}`,
+      );
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    if (response.status !== 402) {
+      break;
+    }
+
+    if (refusalReason) {
+      die(ExitCode.MaxPriceExceeded, refusalReason);
+    }
+
+    const reason = await describe402(response);
+    const charged =
+      response.headers.has("payment-receipt") ||
+      response.headers.has("x-mpp-amount-paid");
+
+    const freshChallenge = /(^|,)\s*Payment\b/i.test(
+      response.headers.get("www-authenticate") ?? "",
     );
-  } finally {
-    clearTimeout(timeout);
-  }
 
-  if (response.status === 402) {
+    if (!charged && freshChallenge && attempt < MAX_PAYMENT_ATTEMPTS) {
+      process.stderr.write(
+        `[skate] payment rejected (${reason}); retrying with a fresh ` +
+          `challenge (attempt ${attempt + 1}/${MAX_PAYMENT_ATTEMPTS})\n`,
+      );
+
+      continue;
+    }
+
     die(
-      ExitCode.MaxPriceExceeded,
-      refusalReason ?? "backend still requires payment",
+      ExitCode.PaymentFailed,
+      charged
+        ? `backend returned 402 but reported a charge — not retrying: ${reason}`
+        : `backend rejected payment after ${attempt} attempt(s): ${reason}`,
     );
   }
 

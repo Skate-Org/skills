@@ -31,6 +31,9 @@ The wallet uses pull-mode ERC-3009 `transferWithAuthorization` — the client si
 | 10   | No wallet file found, or no entry for any supported network                                       | Run setup below                                                                   |
 | 12   | Private key is hex-valid but not a usable secp256k1 key                                           | Re-create the entry with a fresh `privateKey` (e.g. from `cast wallet new`)       |
 | 7    | Backend unreachable, or backend's `paymentMethod` does not match any wallet entry / supported set | Check your network. Add a wallet entry for the backend's current `paymentMethod`. |
+| 3    | Backend reachable, but its `/services` response was unusable                                      | Not a wallet problem — see the note below; the fix depends on which case.         |
+
+Exit `3` covers two distinct cases, and the stderr message tells them apart. A non-OK HTTP status means the backend is likely down — retry later. A body this client could not parse (missing `paymentMethod`, malformed `services`) means the client may be out of date relative to the backend — check for a skill update before retrying.
 
 Funding failures surface later, during the paid request — the request will fail with an error. Fund the wallet on Monad mainnet per the setup below before making a call.
 
